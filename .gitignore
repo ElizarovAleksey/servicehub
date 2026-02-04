@@ -11,6 +11,8 @@ node_modules/
 
 # Docker
 *.log
+Dockerfile
+docker-compose.yml
 
 # OS
 .DS_Store
