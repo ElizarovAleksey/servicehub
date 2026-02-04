@@ -4,9 +4,6 @@ services:
     container_name: servicehub
     ports:
       - "5055:5000"
-    dns:
-      - 192.168.3.112
-      - 192.168.3.1  
     volumes:
       - .:/app
       - ./data:/data
