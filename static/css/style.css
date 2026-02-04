@@ -1,0 +1,17 @@
+
+  body.compact .service-card {
+    padding: 0.6rem;
+  }
+
+  body.compact .service-card p {
+    display: none;
+  }
+
+  body.compact .service-card a {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  body.compact h3 {
+    font-size: 0.75rem;
+  }

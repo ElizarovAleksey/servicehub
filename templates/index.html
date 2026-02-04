@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>ServiceHub</title>
+
+  <!-- Tailwind CDN -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+
+  <!-- SortableJS -->
+  <script src="{{ url_for('static', filename='js/sortable.min.js') }}"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#020617',
+            card: '#020617'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .service-card { padding: 0.9rem; }
+
+    body.compact .service-card { padding: 0.6rem; }
+    body.compact .service-card p { display: none; }
+    body.compact .service-card a { padding: 0.25rem; font-size: 0.7rem; }
+    body.compact h3 { font-size: 0.75rem; }
+  </style>
+</head>
+
+<body class="bg-bg text-gray-200 min-h-screen overflow-hidden">
+
+<!-- HEADER -->
+<header class="border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+  <div>
+    <h1 class="text-xl font-semibold">🧩 ServiceHub</h1>
+    <p class="text-xs text-gray-400">Корпоративные сервисы</p>
+  </div>
+
+  <button id="toggleMode"
+    class="text-xs px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 transition">
+    Компактно
+  </button>
+</header>
+
+<!-- CONTENT -->
+<main class="p-4 space-y-8 overflow-auto"
+      style="height: calc(100vh - 80px);">
+
+{% for group in groups %}
+
+  <!-- GROUP -->
+  <section class="group space-y-3" data-group="{{ group.name }}">
+    <h2 class="text-sm font-medium text-gray-300 flex items-center gap-2">
+      📁 {{ group.name }}
+    </h2>
+
+    <div class="service-list grid gap-3"
+         style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+
+      {% for s in group.services %}
+      <div
+        class="service-card bg-card rounded-lg border border-slate-800
+               hover:border-indigo-500/50 hover:shadow-indigo-500/10
+               hover:shadow-md transition"
+        data-service="{{ s.name }}"
+      >
+
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium truncate">
+            {{ s.name }}
+          </h3>
+
+          {% if s.status == "ok" %}
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
+              OK
+            </span>
+          {% elif s.status == "warning" %}
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400">
+              WARN
+            </span>
+          {% else %}
+            <span class="text-[10px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">
+              DOWN
+            </span>
+          {% endif %}
+        </div>
+
+        <p class="text-xs text-gray-400 mb-2 leading-snug max-h-8 overflow-hidden">
+          {{ s.description }}
+        </p>
+
+        <a href="{{ s.url }}" target="_blank"
+           class="block text-center bg-indigo-600/20 hover:bg-indigo-600/40
+                  text-indigo-300 rounded-md py-1.5 text-xs transition">
+          Открыть
+        </a>
+
+      </div>
+      {% endfor %}
+
+    </div>
+  </section>
+
+{% endfor %}
+
+</main>
+
+<!-- FOOTER -->
+<footer class="text-center text-[10px] text-gray-500 py-2">
+  ServiceHub © {{ year }}
+</footer>
+
+<!-- DRAG & DROP + SAVE -->
+<script>
+  document.querySelectorAll('.service-list').forEach(el => {
+    new Sortable(el, {
+      group: 'services',
+      animation: 120,
+      ghostClass: 'opacity-40',
+      onEnd: saveLayout
+    });
+  });
+
+  function saveLayout() {
+    const layout = {};
+    document.querySelectorAll('.group').forEach(group => {
+      const name = group.dataset.group;
+      layout[name] = [];
+      group.querySelectorAll('[data-service]').forEach(card => {
+        layout[name].push(card.dataset.service);
+      });
+    });
+    localStorage.setItem('servicehub-layout', JSON.stringify(layout));
+  }
+
+  function restoreLayout() {
+    const saved = localStorage.getItem('servicehub-layout');
+    if (!saved) return;
+    const layout = JSON.parse(saved);
+
+    Object.entries(layout).forEach(([group, services]) => {
+      const container = document.querySelector(
+        `.group[data-group="${group}"] .service-list`
+      );
+      if (!container) return;
+      services.forEach(name => {
+        const el = document.querySelector(`[data-service="${name}"]`);
+        if (el) container.appendChild(el);
+      });
+    });
+  }
+
+  restoreLayout();
+</script>
+
+<script>
+  const btn = document.getElementById('toggleMode');
+
+  function setMode(mode) {
+    document.body.classList.toggle('compact', mode === 'compact');
+    localStorage.setItem('servicehub-mode', mode);
+    btn.textContent = mode === 'compact' ? 'Обычный' : 'Компактно';
+  }
+
+  btn.onclick = () => {
+    const current = document.body.classList.contains('compact')
+      ? 'compact'
+      : 'normal';
+    setMode(current === 'compact' ? 'normal' : 'compact');
+  };
+
+  const saved = localStorage.getItem('servicehub-mode');
+  if (saved) setMode(saved);
+</script>
+
+</body>
+</html>

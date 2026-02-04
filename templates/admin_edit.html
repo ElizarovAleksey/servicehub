@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Редактирование сервиса</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
+</head>
+
+<body class="bg-slate-950 text-gray-200 p-6">
+
+<h1 class="text-xl mb-4">✏️ Редактирование сервиса</h1>
+
+<form method="post" class="grid gap-4 max-w-xl">
+
+  <!-- Название -->
+  <input name="name"
+         value="{{ service.name }}"
+         class="bg-slate-900 p-2 rounded"
+         required>
+
+  <!-- Группа -->
+  <select name="group_id"
+          class="bg-slate-900 p-2 rounded"
+          required>
+    {% for g in groups %}
+      <option value="{{ g.id }}"
+        {% if g.id == service.group_id %}selected{% endif %}>
+        {{ g.name }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <!-- URL -->
+  <input name="url"
+         value="{{ service.url }}"
+         class="bg-slate-900 p-2 rounded"
+         required>
+
+  <!-- Описание -->
+  <textarea name="description"
+            class="bg-slate-900 p-2 rounded">{{ service.description }}</textarea>
+
+  <div class="flex gap-3">
+    <button class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded">
+      💾 Сохранить
+    </button>
+    <a href="/admin"
+       class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded">
+      ← Назад
+    </a>
+  </div>
+</form>
+
+</body>
+</html>

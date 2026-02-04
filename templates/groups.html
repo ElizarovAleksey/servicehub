@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>ServiceHub — Группы</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
+</head>
+
+<body class="bg-slate-950 text-gray-200 p-6">
+
+<h1 class="text-xl mb-4">📁 Управление группами</h1>
+
+<!-- Форма добавления группы -->
+<form method="post" class="flex gap-3 mb-6 max-w-md">
+  <input
+    name="name"
+    placeholder="Название группы"
+    class="bg-slate-900 p-2 rounded flex-1"
+    required
+  >
+  <button
+    class="bg-indigo-600 hover:bg-indigo-700 px-4 rounded">
+    ➕
+  </button>
+</form>
+
+<!-- Список групп -->
+<ul class="space-y-2 max-w-md">
+{% for g in groups %}
+  <li class="flex items-center justify-between bg-slate-900 p-2 rounded">
+    <span>{{ g.name }}</span>
+
+    <form method="post"
+          action="/admin/groups/delete/{{ g.id }}"
+          onsubmit="return confirm('Удалить группу? Все сервисы в ней будут удалены!')">
+      <button
+        class="text-xs px-2 py-1 rounded bg-rose-600 hover:bg-rose-700">
+        🗑
+      </button>
+    </form>
+  </li>
+{% endfor %}
+</ul>
+
+<div class="mt-6">
+  <a href="/admin"
+     class="text-sm text-indigo-400 hover:underline">
+    ← Назад к сервисам
+  </a>
+</div>
+
+</body>
+</html>

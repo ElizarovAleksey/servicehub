@@ -1,0 +1,26 @@
+[
+  {
+    "name": "CA Web",
+    "description": "Корпоративный центр сертификации",
+    "url": "https://ca.home.av",
+    "group": "Dev"
+  },
+  {
+    "name": "Home Assistant",
+    "description": "Home Assistant",
+    "url": "https://ha.home.av",
+    "group": "Security"
+  },
+  {
+    "name": "Adguard",
+    "description": "AdGuard Home",
+    "url": "https://adguard.home.av",
+    "group": "Security"
+  },
+  {
+    "name": "Plex",
+    "description": "Видео портал",
+    "url": "https://aplex.home.av",
+    "group": "Media"
+  }
+]
