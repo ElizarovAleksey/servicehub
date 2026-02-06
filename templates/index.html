@@ -7,9 +7,6 @@
   <!-- Tailwind CDN -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
 
-  <!-- SortableJS -->
-  <script src="{{ url_for('static', filename='js/sortable.min.js') }}"></script>
-
   <script>
     tailwind.config = {
       theme: {
@@ -116,49 +113,6 @@
   ServiceHub © {{ year }}
 </footer>
 
-<!-- DRAG & DROP + SAVE -->
-<script>
-  document.querySelectorAll('.service-list').forEach(el => {
-    new Sortable(el, {
-      group: 'services',
-      animation: 120,
-      ghostClass: 'opacity-40',
-      onEnd: saveLayout
-    });
-  });
-
-  function saveLayout() {
-    const layout = {};
-    document.querySelectorAll('.group').forEach(group => {
-      const name = group.dataset.group;
-      layout[name] = [];
-      group.querySelectorAll('[data-service]').forEach(card => {
-        layout[name].push(card.dataset.service);
-      });
-    });
-    localStorage.setItem('servicehub-layout', JSON.stringify(layout));
-  }
-
-  function restoreLayout() {
-    const saved = localStorage.getItem('servicehub-layout');
-    if (!saved) return;
-    const layout = JSON.parse(saved);
-
-    Object.entries(layout).forEach(([group, services]) => {
-      const container = document.querySelector(
-        `.group[data-group="${group}"] .service-list`
-      );
-      if (!container) return;
-      services.forEach(name => {
-        const el = document.querySelector(`[data-service="${name}"]`);
-        if (el) container.appendChild(el);
-      });
-    });
-  }
-
-  restoreLayout();
-</script>
-
 <script>
   const btn = document.getElementById('toggleMode');
 
@@ -179,5 +133,7 @@
   if (saved) setMode(saved);
 </script>
 
+<script src="{{ url_for('static', filename='js/sortable.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/servicehub.js') }}"></script>
 </body>
 </html>

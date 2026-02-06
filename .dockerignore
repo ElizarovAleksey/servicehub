@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime data
+data/
+*.db
+
+# Node
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Env
+.env
+
+# OS
+.DS_Store

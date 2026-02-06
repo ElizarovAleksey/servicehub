@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
+import threading
 from datetime import datetime
 import requests
 import time
+
+
 
 from models import db, Group, Service
 
@@ -37,17 +40,23 @@ def check_service(url, timeout=3):
         print(f"[ServiceHub] {url} DOWN: {e}")
         return "down"
 
+def update_statuses():
+    with app.app_context():
+        services = Service.query.all()
+        for s in services:
+            s.status = check_service(s.url)
+            s.checked_at = datetime.utcnow()
+        db.session.commit()
+
 # --------------------
 # routes: dashboard
 # --------------------
 @app.route("/")
 def index():
+    # запускаем обновление в фоне
+    threading.Thread(target=update_statuses, daemon=True).start()
+
     groups = Group.query.order_by(Group.name).all()
-
-    for g in groups:
-        for s in g.services:
-            s.status = check_service(s.url)
-
     return render_template(
         "index.html",
         groups=groups,

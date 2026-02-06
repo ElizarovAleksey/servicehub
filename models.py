@@ -22,6 +22,10 @@ class Service(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     url = db.Column(db.String(255), nullable=False)
+
+    status = db.Column(db.String(10), default="unknown")
+    checked_at = db.Column(db.DateTime)
+    
     group_id = db.Column(
         db.Integer,
         db.ForeignKey("groups.id"),
