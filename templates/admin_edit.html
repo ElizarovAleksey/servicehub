@@ -6,50 +6,117 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
 </head>
 
-<body class="bg-slate-950 text-gray-200 p-6">
+<body class="bg-bg text-text min-h-screen
+             bg-gradient-to-br from-bg via-bg to-bg/90 py-12">
 
-<h1 class="text-xl mb-4">✏️ Редактирование сервиса</h1>
+<div class="max-w-5xl mx-auto
+            bg-card/80 backdrop-blur-md
+            border border-border
+            rounded-3xl
+            shadow-[0_20px_60px_rgba(0,0,0,0.08)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+            px-10 py-12
+            space-y-10">
 
-<form method="post" class="grid gap-4 max-w-xl">
+  <!-- HEADER -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold">
+        ✏️ Редактирование сервиса
+      </h1>
+      <p class="text-sm text-muted">
+        Изменение параметров сервиса
+      </p>
+    </div>
 
-  <!-- Название -->
-  <input name="name"
-         value="{{ service.name }}"
-         class="bg-slate-900 p-2 rounded"
-         required>
-
-  <!-- Группа -->
-  <select name="group_id"
-          class="bg-slate-900 p-2 rounded"
-          required>
-    {% for g in groups %}
-      <option value="{{ g.id }}"
-        {% if g.id == service.group_id %}selected{% endif %}>
-        {{ g.name }}
-      </option>
-    {% endfor %}
-  </select>
-
-  <!-- URL -->
-  <input name="url"
-         value="{{ service.url }}"
-         class="bg-slate-900 p-2 rounded"
-         required>
-
-  <!-- Описание -->
-  <textarea name="description"
-            class="bg-slate-900 p-2 rounded">{{ service.description }}</textarea>
-
-  <div class="flex gap-3">
-    <button class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded">
-      💾 Сохранить
+    <button id="toggleTheme"
+      class="text-sm px-3 py-1.5 rounded-xl border border-border
+             hover:bg-accent/10 transition">
+      🌗 Тема
     </button>
-    <a href="/admin"
-       class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded">
-      ← Назад
-    </a>
   </div>
-</form>
 
+  <!-- ФОРМА -->
+  <form method="post"
+        class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <input name="name"
+           value="{{ service.name }}"
+           class="bg-bg/70 border border-border
+                  focus:outline-none
+                  focus:ring-2 focus:ring-accent/40
+                  focus:border-accent
+                  p-3 rounded-xl transition"
+           required>
+
+    <select name="group_id"
+            class="bg-bg/70 border border-border
+                   focus:outline-none
+                   focus:ring-2 focus:ring-accent/40
+                   focus:border-accent
+                   p-3 rounded-xl transition"
+            required>
+      {% for g in groups %}
+        <option value="{{ g.id }}"
+          {% if g.id == service.group_id %}selected{% endif %}>
+          {{ g.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <input name="url"
+           value="{{ service.url }}"
+           class="bg-bg/70 border border-border
+                  focus:outline-none
+                  focus:ring-2 focus:ring-accent/40
+                  focus:border-accent
+                  p-3 rounded-xl transition col-span-2"
+           required>
+
+    <textarea name="description"
+              class="bg-bg/70 border border-border
+                     focus:outline-none
+                     focus:ring-2 focus:ring-accent/40
+                     focus:border-accent
+                     p-3 rounded-xl transition col-span-2">{{ service.description }}</textarea>
+
+    <div class="col-span-2 flex justify-between items-center">
+
+      <a href="/admin"
+         class="px-4 py-2 rounded-xl
+                border border-border
+                hover:bg-bg transition">
+        ← Назад
+      </a>
+
+      <button
+        class="bg-accent text-white
+               px-6 py-2 rounded-xl
+               hover:shadow-lg
+               hover:shadow-accent/20
+               transition">
+        💾 Сохранить
+      </button>
+
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  const themeBtn = document.getElementById('toggleTheme');
+  const html = document.documentElement;
+
+  themeBtn.onclick = () => {
+    html.classList.toggle('dark');
+    localStorage.setItem('theme',
+      html.classList.contains('dark') ? 'dark' : 'light');
+  };
+
+  if (localStorage.getItem('theme') === 'dark') {
+    html.classList.add('dark');
+  }
+</script>
 </body>
 </html>

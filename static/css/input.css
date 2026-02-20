@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Светлая тема */
+    --bg: 248 250 252;        /* slate-50 */
+    --card: 255 255 255;      
+    --border: 226 232 240;    /* slate-200 */
+    --text: 15 23 42;         /* slate-900 */
+    --text-muted: 100 116 139;/* slate-500 */
+    /* --accent: 59 130 246; */     /* blue-500 */
+    --accent: 71 85 105;
+  }
+
+  :root.dark {
+  --bg: 23 23 23;        /* neutral-900 */
+  --card: 38 38 38;      /* neutral-800 */
+  --border: 64 64 64;    
+  --text: 245 245 245;
+  --text-muted: 163 163 163;
+  --accent: 71 85 105;
+}
+}

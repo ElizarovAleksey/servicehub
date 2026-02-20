@@ -6,48 +6,111 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
 </head>
 
-<body class="bg-slate-950 text-gray-200 p-6">
+<body class="bg-bg text-text min-h-screen
+             bg-gradient-to-br from-bg via-bg to-bg/90 py-12">
 
-<h1 class="text-xl mb-4">📁 Управление группами</h1>
+<div class="max-w-5xl mx-auto
+            bg-card/80 backdrop-blur-md
+            border border-border
+            rounded-3xl
+            shadow-[0_20px_60px_rgba(0,0,0,0.08)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+            px-10 py-12
+            space-y-10">
 
-<!-- Форма добавления группы -->
-<form method="post" class="flex gap-3 mb-6 max-w-md">
-  <input
-    name="name"
-    placeholder="Название группы"
-    class="bg-slate-900 p-2 rounded flex-1"
-    required
-  >
-  <button
-    class="bg-indigo-600 hover:bg-indigo-700 px-4 rounded">
-    ➕
-  </button>
-</form>
+  <!-- HEADER -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold">
+        📁 Управление группами
+      </h1>
+      <p class="text-sm text-muted">
+        Создание и удаление групп
+      </p>
+    </div>
 
-<!-- Список групп -->
-<ul class="space-y-2 max-w-md">
-{% for g in groups %}
-  <li class="flex items-center justify-between bg-slate-900 p-2 rounded">
-    <span>{{ g.name }}</span>
+    <button id="toggleTheme"
+      class="text-sm px-3 py-1.5 rounded-xl border border-border
+             hover:bg-accent/10 transition">
+      🌗 Тема
+    </button>
+  </div>
 
-    <form method="post"
-          action="/admin/groups/delete/{{ g.id }}"
-          onsubmit="return confirm('Удалить группу? Все сервисы в ней будут удалены!')">
-      <button
-        class="text-xs px-2 py-1 rounded bg-rose-600 hover:bg-rose-700">
-        🗑
-      </button>
-    </form>
-  </li>
-{% endfor %}
-</ul>
+  <!-- ФОРМА ДОБАВЛЕНИЯ -->
+  <form method="post"
+        class="flex gap-4 max-w-lg">
 
-<div class="mt-6">
-  <a href="/admin"
-     class="text-sm text-indigo-400 hover:underline">
-    ← Назад к сервисам
-  </a>
+    <input name="name"
+           placeholder="Название группы"
+           class="flex-1 bg-bg/70 border border-border
+                  focus:outline-none
+                  focus:ring-2 focus:ring-accent/40
+                  focus:border-accent
+                  p-3 rounded-xl transition"
+           required>
+
+    <button
+      class="bg-accent text-white
+             px-6 rounded-xl
+             hover:shadow-lg
+             hover:shadow-accent/20
+             transition">
+      ➕
+    </button>
+  </form>
+
+  <!-- СПИСОК -->
+  <div class="space-y-3">
+
+    {% for g in groups %}
+    <div class="bg-bg/70 border border-border
+                rounded-2xl p-4
+                flex items-center justify-between
+                hover:border-accent/30
+                transition">
+
+      <span class="font-medium">
+        {{ g.name }}
+      </span>
+
+      <form method="post"
+            action="/admin/groups/delete/{{ g.id }}"
+            onsubmit="return confirm('Удалить группу? Все сервисы будут удалены!')">
+        <button
+          class="px-3 py-1.5 text-sm rounded-lg
+                 bg-rose-500/15 text-rose-400
+                 hover:bg-rose-500/25 transition">
+          🗑
+        </button>
+      </form>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <div>
+    <a href="/admin"
+       class="text-sm text-accent hover:underline">
+      ← Назад к сервисам
+    </a>
+  </div>
+
 </div>
 
+<script>
+  const themeBtn = document.getElementById('toggleTheme');
+  const html = document.documentElement;
+
+  themeBtn.onclick = () => {
+    html.classList.toggle('dark');
+    localStorage.setItem('theme',
+      html.classList.contains('dark') ? 'dark' : 'light');
+  };
+
+  if (localStorage.getItem('theme') === 'dark') {
+    html.classList.add('dark');
+  }
+</script>
 </body>
 </html>

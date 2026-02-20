@@ -1,80 +1,194 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="bg-bg text-text min-h-screen">
 <head>
   <meta charset="UTF-8">
   <title>ServiceHub Admin</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v=3">
 </head>
 
-<body class="bg-slate-950 text-gray-200 p-6">
+<body class="bg-bg text-text min-h-screen
+             bg-gradient-to-br from-bg via-bg to-bg/98 p-11">
 
-<h1 class="text-xl mb-4">⚙️ ServiceHub — Админка</h1>
+<div class="max-w-5xl mx-auto
+            bg-card/80 backdrop-blur-md
+            border border-border
+            rounded-3xl
+            shadow-[0_20px_60px_rgba(0,0,0,0.08)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+            px-10 py-12
+            space-y-14">
 
-<form method="post"
-      class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-  <!-- Название -->
-  <input name="name" placeholder="Название сервиса"
-         class="bg-slate-900 p-2 rounded" required>
-
-  <!-- Группа -->
-  <select name="group_id"
-          class="bg-slate-900 p-2 rounded" required>
-    <option value="">— Выберите группу —</option>
-    {% for g in groups %}
-      <option value="{{ g.id }}">{{ g.name }}</option>
-    {% endfor %}
-  </select>
-
-  <!-- URL -->
-  <input name="url" placeholder="https://service.local"
-         class="bg-slate-900 p-2 rounded col-span-2" required>
-
-  <!-- Описание -->
-  <textarea name="description"
-            placeholder="Описание"
-            class="bg-slate-900 p-2 rounded col-span-2"></textarea>
-
-  <!-- Кнопка -->
-  <button type="submit"
-          class="bg-indigo-600 hover:bg-indigo-700
-                 col-span-2 py-2 rounded">
-    ➕ Добавить сервис
-  </button>
-</form>
-<a href="/admin/groups"
-   class="inline-block mb-4 text-sm
-          text-indigo-400 hover:underline">
-  📁 Управление группами
-</a>
-<h2 class="text-lg mb-2">📦 Текущие сервисы</h2>
-<ul class="space-y-2 text-sm">
-{% for s in services %}
-  <li class="flex items-center justify-between bg-slate-900 p-2 rounded">
+  <!-- HEADER -->
+  <div class="flex items-center justify-between">
     <div>
-      <strong>{{ s.name }}</strong>
-      <span class="text-gray-400 text-xs">
-        ({{ s.group.name }})
-      </span>
+      <h1 class="text-2xl font-semibold tracking-tight">
+        ⚙️ ServiceHub — Админка
+      </h1>
+      <p class="text-sm text-muted">
+        Управление сервисами
+      </p>
     </div>
 
-    <div class="flex gap-2">
-      <a href="/admin/edit/{{ s.id }}"
-         class="px-2 py-1 text-xs rounded bg-indigo-600 hover:bg-indigo-700">
-        ✏️
-      </a>
+    <button id="toggleTheme"
+      class="text-sm px-3 py-1.5 rounded-xl border border-border
+             hover:bg-accent/10 transition">
+      🌗 Тема
+    </button>
+  </div>
 
-      <form method="post" action="/admin/delete/{{ s.id }}"
-            onsubmit="return confirm('Удалить сервис?')">
-        <button
-          class="px-2 py-1 text-xs rounded bg-rose-600 hover:bg-rose-700">
-          🗑
-        </button>
-      </form>
+  <!-- ФОРМА -->
+  <div class="bg-card/80 backdrop-blur-md
+              rounded-2xl p-8
+              border border-border
+              shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+              dark:shadow-none
+              space-y-6">
+
+    <h2 class="text-lg font-semibold">
+      ➕ Добавить сервис
+    </h2>
+
+    <form method="post"
+          class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <input name="name"
+             placeholder="Название сервиса"
+             class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition"
+             required>
+
+      <select name="group_id"
+              class="bg-bg/70 border border-border
+                     focus:outline-none
+                     focus:ring-2 focus:ring-accent/40
+                     focus:border-accent
+                     p-3 rounded-xl transition"
+              required>
+        <option value="">— Выберите группу —</option>
+        {% for g in groups %}
+          <option value="{{ g.id }}">{{ g.name }}</option>
+        {% endfor %}
+      </select>
+
+      <input name="url"
+             placeholder="https://service.local"
+             class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"
+             required>
+
+      <textarea name="description"
+                placeholder="Описание"
+                class="bg-bg/70 border border-border
+                       focus:outline-none
+                       focus:ring-2 focus:ring-accent/40
+                       focus:border-accent
+                       p-3 rounded-xl transition col-span-2"></textarea>
+
+      <button type="submit"
+        class="col-span-2
+               bg-accent text-white
+               py-3 rounded-xl
+               hover:shadow-lg
+               hover:shadow-accent/20
+               transition duration-200">
+        Добавить сервис
+      </button>
+    </form>
+
+  </div>
+
+  <!-- СПИСОК -->
+  <div class="space-y-6">
+
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold">
+        📦 Текущие сервисы
+      </h2>
+
+    <a href="/admin/groups"
+      class="inline-flex items-center gap-2
+              px-4 py-2
+              text-sm
+              rounded-xl
+              bg-accent/10 text-accent
+              hover:bg-accent/20
+              transition">
+      📁 Управление группами
+    </a>
     </div>
-  </li>
-{% endfor %}
-</ul>
+
+    <div class="grid gap-4">
+
+      {% for s in services %}
+      <div class="bg-card/80 backdrop-blur-md
+                  border border-border
+                  rounded-2xl
+                  p-5
+                  flex items-center justify-between
+                  hover:border-accent/30
+                  hover:bg-card
+                  transition duration-200">
+
+        <div>
+          <div class="font-medium text-base">
+            {{ s.name }}
+          </div>
+          <div class="text-xs text-muted">
+            {{ s.group.name }}
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <a href="/admin/edit/{{ s.id }}"
+             class="px-3 py-1.5 text-sm rounded-lg
+                    bg-accent/15 text-accent
+                    hover:bg-accent/25 transition">
+            ✏️
+          </a>
+
+          <form method="post"
+                action="/admin/delete/{{ s.id }}"
+                onsubmit="return confirm('Удалить сервис?')">
+            <button
+              class="px-3 py-1.5 text-sm rounded-lg
+                     bg-rose-500/15 text-rose-400
+                     hover:bg-rose-500/25 transition">
+              🗑
+            </button>
+          </form>
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const themeBtn = document.getElementById('toggleTheme');
+  const html = document.documentElement;
+
+  themeBtn.onclick = () => {
+    html.classList.toggle('dark');
+    localStorage.setItem(
+      'theme',
+      html.classList.contains('dark') ? 'dark' : 'light'
+    );
+  };
+
+  if (localStorage.getItem('theme') === 'dark') {
+    html.classList.add('dark');
+  }
+</script>
 
 </body>
 </html>
