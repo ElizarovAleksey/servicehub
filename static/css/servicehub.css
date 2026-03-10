@@ -1,0 +1,14 @@
+/* INPUT */
+.input {
+  @apply w-full px-3 py-2 rounded-xl
+         border border-border
+         bg-card/70
+         backdrop-blur
+         text-text
+         placeholder:text-muted
+         focus:outline-none
+         focus:ring-2
+         focus:ring-accent/40
+         focus:border-accent
+         transition;
+}

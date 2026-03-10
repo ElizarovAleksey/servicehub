@@ -1,0 +1,162 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<body class="bg-bg text-text min-h-screen
+             bg-gradient-to-br from-bg via-bg to-bg/98 p-11">
+
+<div class="max-w-5xl mx-auto
+            bg-card/80 backdrop-blur-md
+            border border-border
+            rounded-3xl
+            shadow-[0_20px_60px_rgba(0,0,0,0.08)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+            px-10 py-12
+            space-y-14">
+<!-- CARD -->
+<div class="bg-card/80 backdrop-blur-md
+              rounded-2xl p-8
+              border border-border
+              shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+              dark:shadow-none
+              space-y-6">
+
+<h2 class="text-lg font-semibold mb-4">
+🔔 Добавить правило оповещения
+</h2>
+
+<form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+<select name="service_id" class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition">
+{% for s in services %}
+<option value="{{ s.id }}">{{ s.name }}</option>
+{% endfor %}
+</select>
+
+<select name="channel_id" class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition">
+{% for c in channels %}
+<option value="{{ c.id }}">{{ c.name }} ({{ c.type }})</option>
+{% endfor %}
+</select>
+
+<select name="type" class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition">
+<option value="status_change">Изменение статуса</option>
+<option value="ssl_expiry">SSL истекает</option>
+</select>
+
+<input
+type="number"
+name="days_before"
+placeholder="Дней до SSL"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition"
+/>
+
+<button class="col-span-2
+               bg-accent text-white
+               py-3 rounded-xl
+               hover:shadow-lg
+               hover:shadow-accent/20
+               transition duration-200">
+Добавить правило
+</button>
+
+</form>
+
+</div>
+
+
+<!-- EXISTING RULES -->
+<div class="bg-card/80 backdrop-blur-md
+              rounded-2xl p-8
+              border border-border
+              shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+              dark:shadow-none
+              space-y-6">
+
+<h2 class="text-lg font-semibold mb-4">
+📋 Существующие правила
+</h2>
+
+<div class="space-y-3">
+
+{% for a in alerts %}
+
+<div class="flex items-center justify-between p-4 rounded-xl border border-border">
+
+<div>
+
+<div class="font-medium">
+{{ a.service.name }}
+</div>
+
+<div class="text-sm text-muted">
+{{ a.type }}
+{% if a.days_before %}
+— {{ a.days_before }} дней
+{% endif %}
+</div>
+
+</div>
+
+<div class="flex items-center gap-3">
+
+<span class="px-3 py-1.5 text-sm rounded-lg
+                    bg-accent/15 text-accent
+                    hover:bg-accent/25 transition">
+{{ a.channel.name }}
+</span>
+
+<a href="/admin/alerts/toggle/{{ a.id }}"
+
+
+<span class="px-3 py-1.5 rounded-lg text-xs 
+                bg-accent/15 text-accent
+                hover:bg-accent/25 transition
+{% if a.enabled %}
+bg-emerald-500/15 text-emerald-400
+{% else %}
+bg-zinc-500/15 text-zinc-400
+{% endif %}
+">
+{% if a.enabled %} 🟢 ON{% else %} ⚫ OFF{% endif %}
+</span>
+</a>
+
+<form method="POST" action="/admin/alerts/delete/{{ a.id }}">
+<button
+onclick="return confirm('Удалить правило?')"
+class="px-3 py-1.5 text-sm rounded-lg
+                     bg-rose-500/15 text-rose-400
+                     hover:bg-rose-500/25 transition">
+
+🗑
+</button>
+</form>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+{% endblock %}

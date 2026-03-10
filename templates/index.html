@@ -122,6 +122,36 @@
         {{ s.description }}
       </p>
 
+      {% if s.ssl_days_left is not none %}
+
+      <div class="flex items-center gap-2 text-xs mt-2 opacity-80">
+
+        <span>🔐</span>
+
+        {% if s.ssl_days_left is none %}
+          <span class="text-zinc-400">нет данных</span>
+
+        {% elif s.ssl_days_left == -1 %}
+          <span class="text-rose-400">SSL ошибка</span>
+
+        {% elif s.ssl_days_left < 7 %}
+          <span class="text-rose-400">{{ s.ssl_days_left }} дн.</span>
+          
+
+        {% elif s.ssl_days_left < 30 %}
+          <span class="text-amber-400">{{ s.ssl_days_left }} дн.</span>
+          
+        {% else %}
+          <span class="text-emerald-400">{{ s.ssl_days_left }} дн.</span>
+          
+        {% endif %}
+
+        <span title="Истекает {{ s.ssl_expiry_date.strftime('%d.%m.%Y') if s.ssl_expiry_date }}"></span>
+
+      </div>
+
+      {% endif %}
+
       <div class="open-hint text-sm text-accent opacity-0 group-hover:opacity-100 transition">
         Открыть →
       </div>
@@ -168,6 +198,25 @@
   if (localStorage.getItem('theme') === 'dark') {
     html.classList.add('dark');
   }
+
+  async function refreshStatus() {
+    const response = await fetch("/api/status")
+    const data = await response.json()
+
+    data.services.forEach(service => {
+
+        const statusElement = document.querySelector(
+            `[data-service-id="${service.id}"]`
+        )
+
+        if (!statusElement) return
+
+        statusElement.dataset.status = service.status
+
+    })
+
+  }
+  setInterval(refreshStatus, 10000)
 
 </script>
 

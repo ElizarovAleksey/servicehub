@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru" class="bg-bg text-text min-h-screen">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ServiceHub</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/servicehub.css') }}">
+
+</head>
+
+<body class="bg-bg text-text min-h-screen bg-gradient-to-br from-bg via-bg to-bg/90">
+
+<div class="max-w-5xl mx-auto py-10 px-6">
+
+<!-- HEADER -->
+<div class="flex items-center justify-between mb-8">
+
+<div>
+<h1 class="text-2xl font-semibold tracking-tight">
+⚙️ ServiceHub — Админка
+</h1>
+<p class="text-sm text-muted">
+Управление сервисами
+</p>
+</div>
+
+<div class="flex gap-2">
+
+<a href="/admin"
+class="text-sm px-3 py-1.5 rounded-xl border border-border hover:bg-accent/10 transition">
+🧩 Сервисы
+</a>
+
+<a href="/admin/alerts"
+class="text-sm px-3 py-1.5 rounded-xl border border-border hover:bg-accent/10 transition">
+🔔 Alerts
+</a>
+
+<a href="/admin/notifications"
+class="text-sm px-3 py-1.5 rounded-xl border border-border hover:bg-accent/10 transition">
+📨 Notifications
+</a>
+
+<button id="toggleTheme"
+class="text-sm px-3 py-1.5 rounded-xl border border-border hover:bg-accent/10 transition">
+🌗 Тема
+</button>
+
+</div>
+
+</div>
+
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+
+<div class="space-y-3 mb-6">
+
+{% for category, message in messages %}
+
+<div class="px-4 py-3 rounded-xl border border-border
+{% if category == 'success' %}bg-emerald-500/10 text-emerald-400{% endif %}
+{% if category == 'error' %}bg-rose-500/10 text-rose-400{% endif %}
+">
+
+{{ message }}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endif %}
+{% endwith %}
+
+
+<!-- PAGE CONTENT -->
+{% block content %}
+{% endblock %}
+
+</div>
+
+<script src="{{ url_for('static', filename='js/servicehub.js') }}"></script>
+<script src="{{ url_for('static', filename='js/toggleTheme.js') }}"></script>
+<script>
+setTimeout(() => {
+  document.querySelectorAll('[data-flash]').forEach(el => {
+    el.style.opacity = "0";
+  });
+}, 4000);
+</script>
+</body>
+</html>

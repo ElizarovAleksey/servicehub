@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<body class="bg-bg text-text min-h-screen
+             bg-gradient-to-br from-bg via-bg to-bg/98 p-11">
+
+<div class="max-w-5xl mx-auto
+            bg-card/80 backdrop-blur-md
+            border border-border
+            rounded-3xl
+            shadow-[0_20px_60px_rgba(0,0,0,0.08)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]
+            px-10 py-12
+            space-y-14">
+<!-- CARD -->
+<div class="bg-card/80 backdrop-blur-md
+              rounded-2xl p-8
+              border border-border
+              shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+              dark:shadow-none
+              space-y-6">
+
+<h2 class="text-lg font-semibold mb-4">
+📨 Добавить канал
+</h2>
+
+<form method="POST"  class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+<input
+name="name"
+placeholder="Название"
+                class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition"
+/>
+
+<select id="channelType" name="type" class="bg-bg/70 border border-border
+                     focus:outline-none
+                     focus:ring-2 focus:ring-accent/40
+                     focus:border-accent
+                     p-3 rounded-xl transition">
+<option value="telegram">Telegram</option>
+<option value="email">Email</option>
+</select>
+
+<div id="telegramFields" class="col-span-2 grid grid-cols-1 gap-4">
+<input
+name="token"
+placeholder="Bot Token"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input
+name="chat_id"
+placeholder="Chat ID"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+</div>
+
+<div id="emailFields" class="col-span-2 grid grid-cols-1 gap-4">
+<input name="smtp"
+placeholder="SMTP сервер"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input name="port"
+placeholder="Порт"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input name="user"
+placeholder="Логин"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input name="password"
+placeholder="Пароль"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input name="from"
+placeholder="От кого"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+<input name="to"
+placeholder="Кому"
+class="bg-bg/70 border border-border
+                    focus:outline-none
+                    focus:ring-2 focus:ring-accent/40
+                    focus:border-accent
+                    p-3 rounded-xl transition col-span-2"/>
+
+</div>                    
+
+<button class="col-span-2
+               bg-accent text-white
+               py-3 rounded-xl
+               hover:shadow-lg
+               hover:shadow-accent/20
+               transition duration-200">
+Добавить канал
+</button>
+
+</form>
+
+</div>
+
+
+<!-- CHANNELS -->
+<div class="bg-card/80 backdrop-blur-md
+              rounded-2xl p-8
+              border border-border
+              shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+              dark:shadow-none
+              space-y-6">
+
+<h2 class="text-lg font-semibold mb-4">
+📡 Каналы уведомлений
+</h2>
+
+<div class="space-y-3">
+
+{% for c in channels %}
+
+<div class="flex items-center justify-between p-4 rounded-xl border border-border">
+
+<div>
+
+<div class="font-medium">
+{{ c.name }}
+</div>
+
+<div class="text-sm text-muted">
+{{ c.type }}
+</div>
+
+</div>
+
+<div class="flex gap-2">
+
+<a href="/admin/notifications/test/{{ c.id }}"
+class="px-3 py-1.5 text-sm rounded-lg
+                    bg-accent/15 text-accent
+                    hover:bg-accent/25 transition">
+🧪 Test
+</a>
+
+<form method="POST" action="/admin/notifications/delete/{{ c.id }}">
+<button
+onclick="return confirm('Удалить правило?')"
+class="px-3 py-1.5 text-sm rounded-lg
+                     bg-rose-500/15 text-rose-400
+                     hover:bg-rose-500/25 transition">
+🗑
+</button>
+</form>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+<script>
+const typeSelect = document.getElementById("channelType")
+const telegramFields = document.getElementById("telegramFields")
+const emailFields = document.getElementById("emailFields")
+
+function updateFields(){
+
+    const type = typeSelect.value
+
+    if(type === "telegram"){
+        telegramFields.style.display = "grid"
+        emailFields.style.display = "none"
+    }
+
+    if(type === "email"){
+        telegramFields.style.display = "none"
+        emailFields.style.display = "grid"
+    }
+
+}
+
+typeSelect.addEventListener("change", updateFields)
+
+updateFields()
+</script>
+
+{% endblock %}
