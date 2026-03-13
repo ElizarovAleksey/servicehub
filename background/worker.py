@@ -14,7 +14,7 @@ def start_worker():
 
                 update_statuses()
 
-                time.sleep(60)
+                time.sleep(45)
 
     import threading
 

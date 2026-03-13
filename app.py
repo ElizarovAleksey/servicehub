@@ -8,14 +8,16 @@ import ssl
 import json
 import urllib3
 import smtplib
+import logging
 from urllib.parse import urlparse
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from flask import flash
 from flask_httpauth import HTTPBasicAuth
 from concurrent.futures import ThreadPoolExecutor
+from flask import jsonify
 
 from models import db, Group, Service, AlertRule, NotificationChannel
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,6 +26,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # app & db
 # --------------------
 app = Flask(__name__)
+
+APP_VERSION = "1.0"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////data/servicehub.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -40,14 +44,36 @@ users = {
     os.getenv("ADMIN_USER", "admin"):
     generate_password_hash(os.getenv("ADMIN_PASSWORD", "servicehub123"))
 }
+
+log = logging.getLogger("werkzeug")
+
+class StatusEndpointFilter(logging.Filter):
+    def filter(self, record):
+        message = record.getMessage()
+        return "/api/status" not in message
+        
+
+log.addFilter(StatusEndpointFilter())
+
 @auth.verify_password
 def verify_password(username, password):
 
     if username in users and check_password_hash(users.get(username), password):
         return username
+        
 # --------------------
 # utils
 # --------------------
+def utc_now():
+    return datetime.now(UTC).replace(tzinfo=None)
+
+@app.context_processor
+def inject_globals():
+    return {
+        "version": APP_VERSION,
+        "year": datetime.now().year
+    }    
+
 def check_service(url, timeout=3):
     start = time.time()
     try:
@@ -64,15 +90,21 @@ def check_service(url, timeout=3):
         return "down"
 
     except Exception as e:
-        print(f"[ServiceHub] {url} DOWN: {e}")
+        """ print(f"[ServiceHub] {url} DOWN: {e}") """
         return "down"
 
 def process_service(s):
 
+    now = utc_now()
+    mode = s.ssl_mode or "auto"
+
+    # --- STATUS CHECK ---
     new_status = check_service(s.url)
+    status_changed = s.status != new_status
 
-    if s.status != new_status:
+    print("[SSL CHECK]", s.name, mode)
 
+    if status_changed:
         message = (
             f"⚠ <b>{s.name}</b>\n"
             f"Статус изменился:\n"
@@ -90,44 +122,77 @@ def process_service(s):
             if rule.channel and rule.channel.enabled:
                 send_notification(rule.channel, message)
 
-    s.status = new_status
-    s.checked_at = datetime.now(UTC)
+        s.status = new_status
+        s.checked_at = now
 
-    # SSL проверка
-    if s.url.startswith("https://"):
+    # --- SSL CHECK ---
+    if mode == "disabled":
+        return
 
-        try:
+    try:
+        need_check = (
+            not s.ssl_checked_at or
+            (now - s.ssl_checked_at).total_seconds() > 60
+        )
 
-            need_check = (
-                not s.ssl_expiry_date or
-                not s.checked_at or
-                (datetime.now(UTC) - s.checked_at).total_seconds() > 3600
-            )
+        if not need_check:
+            return
 
-            if need_check:
+        if mode == "auto":
 
-                parsed = urlparse(s.url)
-                host = parsed.hostname
+            if not s.url.startswith("https://"):
+                return
 
-                ssl_info = check_ssl_expiry(host)
+            parsed = urlparse(s.url)
+            host = parsed.hostname
+            port = parsed.port or 443
 
-                s.ssl_days_left = ssl_info["days_left"]
-                s.ssl_expiry_date = ssl_info["expiry_date"]
+            ssl_info = check_ssl_expiry(host, port)
 
-        except Exception as e:
+        elif mode == "file":
 
-            print(f"[SSL ERROR] {s.url}: {e}")
+            if s.ssl_cert_path and os.path.exists(s.ssl_cert_path):
+                ssl_info = check_cert_file(s.ssl_cert_path)
+            else:
+                print(f"[SSL FILE MISSING] {s.name}: {s.ssl_cert_path}")
+                s.ssl_days_left = -1
+                s.ssl_checked_at = now
+                return
 
-            s.ssl_days_left = -1        
+        else:
+            return
+
+        print(f"[SSL OK] {s.name}: {ssl_info['days_left']} days")
+
+        s.ssl_days_left = ssl_info["days_left"]
+        s.ssl_expiry_date = ssl_info["expiry_date"]
+        s.ssl_checked_at = now
+
+    except Exception as e:
+        print(f"[SSL ERROR] {s.name} ({s.url}) mode={mode}: {e}")
+        s.ssl_days_left = -1
+        s.ssl_checked_at = now
 
 def update_statuses():
 
     services = Service.query.all()
+    ids = [s.id for s in services]
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        executor.map(process_service, services)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(process_service_by_id, ids)
 
-    db.session.commit()
+def process_service_by_id(service_id):
+
+    with app.app_context():
+
+        s = Service.query.get(service_id)
+
+        if not s:
+            return
+
+        process_service(s)
+
+        db.session.commit()
 
 def check_ssl_expiry(hostname, port=443):
     context = ssl.create_default_context()
@@ -141,12 +206,30 @@ def check_ssl_expiry(hostname, port=443):
     cert = x509.load_der_x509_certificate(der_cert, default_backend())
 
     # ВАЖНО: используем timezone-aware дату
-    expiry_date = cert.not_valid_after_utc
+    expiry_date = cert.not_valid_after_utc.replace(tzinfo=None)
 
-    days_left = (expiry_date - datetime.now(UTC)).days
+    days_left = (expiry_date - utc_now()).days
 
     return {
         "expiry_date": expiry_date,
+        "days_left": days_left
+    }
+
+def check_cert_file(path):
+
+    with open(path, "rb") as f:
+
+        cert = x509.load_pem_x509_certificate(
+            f.read(),
+            default_backend()
+        )
+
+    expiry = cert.not_valid_after_utc.replace(tzinfo=None)
+
+    days_left = (expiry - datetime.utcnow()).days
+
+    return {
+        "expiry_date": expiry,
         "days_left": days_left
     }
 # --------------------
@@ -157,31 +240,15 @@ def index():
    
     groups = Group.query.order_by(Group.name).all()
 
-    # добавляем SSL-информацию
-    """ for group in groups:
-        for s in group.services:
-
-            s.ssl_days_left = None
-            s.ssl_expiry_date = None
-
-            if s.url.startswith("https://"):
-                try:
-                    parsed = urlparse(s.url)
-                    host = parsed.hostname
-
-                    ssl_info = check_ssl_expiry(host)
-
-                    s.ssl_days_left = ssl_info["days_left"]
-                    s.ssl_expiry_date = ssl_info["expiry_date"]
-
-                except Exception as e:
-                    print(f"[SSL ERROR] {s.url}: {type(e).__name__} - {e}")
-                    s.ssl_days_left = -1 """
-
+    critical_services = Service.query.filter_by(is_critical=True).all()
+    other_services = Service.query.filter_by(is_critical=False).all()
+    
     return render_template(
         "index.html",
         groups=groups,
-        year=datetime.now().year
+        critical_services=critical_services,
+        other_services=other_services,
+       
     )
 
 @app.route("/api/status")
@@ -199,7 +266,7 @@ def api_status():
             "ssl_days_left": s.ssl_days_left
         })
 
-    return {"services": data}
+    return jsonify({"services": data})
 
 # --------------------
 # admin: services
@@ -210,17 +277,47 @@ def admin():
     groups = Group.query.order_by(Group.name).all()
 
     if request.method == "POST":
+
+        is_critical = "is_critical" in request.form
+        ssl_mode = request.form.get("ssl_mode", "auto")
+
         service = Service(
             name=request.form["name"],
             description=request.form.get("description"),
             url=request.form["url"],
-            group_id=int(request.form["group_id"])
+            group_id=int(request.form["group_id"]),
+            is_critical=is_critical,
+            ssl_mode=ssl_mode
         )
+
         db.session.add(service)
+        db.session.flush() 
+
+        cert_file = request.files.get("cert_file")
+
+        if ssl_mode == "file" and cert_file and cert_file.filename:
+
+            cert_dir = "/data/certs"
+            os.makedirs(cert_dir, exist_ok=True)
+
+            filename = f"service_{service.id}.pem"
+            path = os.path.join(cert_dir, filename)
+
+            cert_file.save(path)
+            service.ssl_cert_path = path
+
+            """ print("CERT SAVED:", path) """
+
         db.session.commit()
         return redirect(url_for("admin"))
 
-    services = Service.query.order_by(Service.name).all()
+    page = request.args.get("page", 1, type=int)
+
+    services = Service.query.order_by(Service.name).paginate(
+        page=page,
+        per_page=10,
+        error_out=False
+    )
     return render_template(
         "admin.html",
         services=services,
@@ -233,16 +330,40 @@ def admin():
 @app.route("/admin/edit/<int:service_id>", methods=["GET", "POST"])
 @auth.login_required
 def edit_service(service_id):
+
     service = Service.query.get_or_404(service_id)
     groups = Group.query.order_by(Group.name).all()
 
     if request.method == "POST":
+
         service.name = request.form["name"]
         service.description = request.form.get("description")
         service.url = request.form["url"]
         service.group_id = int(request.form["group_id"])
+        service.is_critical = request.form.get("is_critical") == "1"
+
+        # SSL режим
+        service.ssl_mode = request.form.get("ssl_mode", "auto")
+
+        # загрузка сертификата
+        cert_file = request.files.get("cert_file")
+
+        if cert_file and cert_file.filename:
+
+            cert_dir = "/data/certs"
+            os.makedirs(cert_dir, exist_ok=True)
+
+            filename = f"service_{service.id}.pem"
+            path = os.path.join(cert_dir, filename)
+
+            cert_file.save(path)
+
+            service.ssl_cert_path = path
+
+            """ print("CERT SAVED:", path) """
 
         db.session.commit()
+
         return redirect(url_for("admin"))
 
     return render_template(
@@ -477,19 +598,83 @@ def test_notification(channel_id):
 # init
 # --------------------
 
+def migrate_database():
+
+    with db.engine.connect() as conn:
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN is_critical BOOLEAN DEFAULT 0"
+            ))
+            print("[DB] added column: is_critical")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN ssl_days_left INTEGER"
+            ))
+            print("[DB] added column: ssl_days_left")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN ssl_expiry_date DATETIME"
+            ))
+            print("[DB] added column: ssl_expiry_date")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN ssl_mode VARCHAR(20) DEFAULT 'auto'"
+            ))
+            print("[DB] added column: ssl_mode")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN ssl_cert_path VARCHAR(255)"
+            ))
+            print("[DB] added column: ssl_cert_path")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "ALTER TABLE services ADD COLUMN ssl_checked_at DATETIME"
+            ))
+            print("[DB] added column: ssl_checked_at")
+        except:
+            pass
+
+        try:
+            conn.execute(db.text(
+                "UPDATE services SET ssl_mode = 'auto' WHERE ssl_mode IS NULL"
+            ))
+            print("[DB] normalized ssl_mode")
+        except:
+            pass
+
 def start_status_worker():
 
     def loop():
 
         while True:
 
-            with app.app_context():
+            try:
+                with app.app_context():
 
-                print("[ServiceHub] checking services...")
+                    print("[ServiceHub] checking services...")
 
-                update_statuses()
+                    update_statuses()
 
-            time.sleep(60)
+            except Exception as e:
+                print("[ServiceHub] worker error:", e)
+
+            time.sleep(20)
 
     t = threading.Thread(target=loop)
     t.daemon = True
@@ -498,6 +683,7 @@ def start_status_worker():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        migrate_database()
 
         start_status_worker()
 

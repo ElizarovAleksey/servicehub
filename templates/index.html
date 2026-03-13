@@ -64,112 +64,96 @@
 <!-- CONTENT -->
 <main class="p-6 space-y-10 overflow-auto" style="height: calc(100vh - 100px);">
 
+  <!-- CRITICAL SERVICES -->
+<section class="space-y-4">
+
+<h2 class="text-lg font-semibold mb-4">
+🚨 Важнейшие службы
+</h2>
+
+<div class="service-list grid gap-6"
+style="grid-template-columns: repeat(auto-fill, minmax(260px, 300px));">
+
+{% for s in critical_services %}
+{% include "service_card.html" %}
+{% endfor %}
+
+</div>
+
+</section>
+
+<!-- GROUPS HEADER -->
+<div class="flex items-center justify-between">
+
+<h2 class="text-lg font-semibold">
+📦 Другие службы
+</h2>
+
+<button id="toggleGroupsBtn"
+class="text-xs px-3 py-1 rounded-lg border border-border hover:bg-accent/10">
+Показать / скрыть
+</button>
+
+</div>
+
+<!-- КОНТЕЙНЕР ГРУПП -->
+<div id="groups-container">
+
 {% for group in groups %}
 
 <section class="space-y-4 service-group" data-group="{{ group.name }}">
 
-  <!-- Group header -->
-  <div class="flex items-center gap-3">
-    <div class="w-1.5 h-6 bg-accent rounded"></div>
-    <h2 class="text-sm font-semibold tracking-wide uppercase text-muted">
-      {{ group.name }}
-    </h2>
-  </div>
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-6 bg-accent rounded"></div>
 
-  <!-- Cards container (IMPORTANT for Sortable) -->
-  <div class="service-list grid gap-6"
-       style="grid-template-columns: repeat(auto-fill, minmax(260px, 300px));
-              justify-content: start;">
+<h2 class="text-sm font-semibold tracking-wide uppercase text-muted">
+{{ group.name }}
+</h2>
 
-    {% for s in group.services %}
+</div>
 
-    <a href="{{ s.url }}" target="_blank"
-       class="card draggable-card group relative block
-              bg-card/90
-              rounded-2xl
-              p-6
-              border border-border/50
-              transition duration-150 ease-out
-              hover:-translate-y-0.5
-              hover:shadow-lg
-              dark:hover:shadow-[0_0_25px_rgba(255,255,255,0.08)]
-              dark:hover:border-white/20
-              dark:hover:bg-card"
-       data-service="{{ s.id }}">
+<div class="service-list grid gap-6"
+style="grid-template-columns: repeat(auto-fill, minmax(260px, 300px));">
 
-      <!-- status -->
-      <div class="absolute top-4 right-4">
-        {% if s.status == "ok" %}
-          <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
-            ● OK
-          </span>
-        {% elif s.status == "warning" %}
-          <span class="text-[11px] px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 font-medium">
-            ● WARN
-          </span>
-        {% else %}
-          <span class="text-[11px] px-3 py-1 rounded-full bg-rose-500/15 text-rose-400 font-medium">
-            ● DOWN
-          </span>
-        {% endif %}
-      </div>
+{% for s in group.services if not s.is_critical %}
+{% include "service_card.html" %}
+{% endfor %}
 
-      <h3 class="text-lg font-semibold mb-3 group-hover:text-accent transition">
-        {{ s.name }}
-      </h3>
+</div>
 
-      <p class="desc text-sm text-muted leading-relaxed mb-6">
-        {{ s.description }}
-      </p>
-
-      {% if s.ssl_days_left is not none %}
-
-      <div class="flex items-center gap-2 text-xs mt-2 opacity-80">
-
-        <span>🔐</span>
-
-        {% if s.ssl_days_left is none %}
-          <span class="text-zinc-400">нет данных</span>
-
-        {% elif s.ssl_days_left == -1 %}
-          <span class="text-rose-400">SSL ошибка</span>
-
-        {% elif s.ssl_days_left < 7 %}
-          <span class="text-rose-400">{{ s.ssl_days_left }} дн.</span>
-          
-
-        {% elif s.ssl_days_left < 30 %}
-          <span class="text-amber-400">{{ s.ssl_days_left }} дн.</span>
-          
-        {% else %}
-          <span class="text-emerald-400">{{ s.ssl_days_left }} дн.</span>
-          
-        {% endif %}
-
-        <span title="Истекает {{ s.ssl_expiry_date.strftime('%d.%m.%Y') if s.ssl_expiry_date }}"></span>
-
-      </div>
-
-      {% endif %}
-
-      <div class="open-hint text-sm text-accent opacity-0 group-hover:opacity-100 transition">
-        Открыть →
-      </div>
-
-    </a>
-
-    {% endfor %}
-  </div>
 </section>
 
 {% endfor %}
-</main>
+
+</div>
+
 
 <footer class="text-center text-[10px] text-muted py-3 border-t border-border">
-  ServiceHub © {{ year }}
+  ServiceHub © v{{ version }} {{ year }} 
 </footer>
 
 <script>
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+  const btn = document.getElementById("toggleGroupsBtn")
+  const container = document.getElementById("groups-container")
+
+  btn.addEventListener("click", () => {
+
+  container.classList.toggle("opacity-0")
+  container.classList.toggle("max-h-0")
+
+  if (container.style.display === "none") {
+      container.style.display = "block"
+    } else {
+      container.style.display = "none"
+    }
+
+    })
+
+  })
+
   /* compact mode */
   const modeBtn = document.getElementById('toggleMode');
 
@@ -199,25 +183,87 @@
     html.classList.add('dark');
   }
 
+  /* status */
   async function refreshStatus() {
+
+  try {
+
     const response = await fetch("/api/status")
-    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error("API not ready")
+    }
+
+    const text = await response.text()
+
+    if (!text) {
+      console.warn("Empty API response")
+      return
+    }
+
+    const data = JSON.parse(text)
 
     data.services.forEach(service => {
 
-        const statusElement = document.querySelector(
-            `[data-service-id="${service.id}"]`
-        )
+      const card = document.querySelector(
+        `[data-service-id="${service.id}"]`
+      )
 
-        if (!statusElement) return
+      if (!card) return
 
-        statusElement.dataset.status = service.status
+      const statusBadge = card.querySelector(".status-badge")
+      const sslInfo = card.querySelector(".ssl-info")
+
+      if (!statusBadge || !sslInfo) return
+
+      /* STATUS */
+
+      if (service.status === "ok") {
+
+        statusBadge.textContent = "● OK"
+
+      } else if (service.status === "warning") {
+
+        statusBadge.textContent = "● WARN"
+
+      } else if (service.status === "unknown") {
+
+        statusBadge.textContent = "● CHECK"
+
+      } else {
+
+        statusBadge.textContent = "● DOWN"
+
+      }
+
+      /* SSL */
+
+      if (service.ssl_days_left === null) {
+
+        sslInfo.textContent = "нет данных"
+
+      } else if (service.ssl_days_left === -1) {
+
+        sslInfo.textContent = "SSL ошибка"
+
+      } else {
+
+        sslInfo.textContent = service.ssl_days_left + " дн."
+
+      }
 
     })
 
-  }
-  setInterval(refreshStatus, 10000)
+  } catch (err) {
 
+    console.warn("Status refresh skipped:", err)
+
+  }
+
+}
+
+setInterval(refreshStatus, 5000)
+refreshStatus()
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>

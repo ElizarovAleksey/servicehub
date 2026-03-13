@@ -84,6 +84,9 @@ class="text-sm px-3 py-1.5 rounded-xl border border-border hover:bg-accent/10 tr
 {% block content %}
 {% endblock %}
 
+<footer class="text-center text-[10px] text-muted py-3 border-t border-border">
+  ServiceHub © v{{ version }} {{ year }} 
+</footer>
 </div>
 
 <script src="{{ url_for('static', filename='js/servicehub.js') }}"></script>
@@ -94,6 +97,268 @@ setTimeout(() => {
     el.style.opacity = "0";
   });
 }, 4000);
+
+  function updateSslMode() {
+    const mode = document.getElementById("ssl_mode").value
+    const certBlock = document.getElementById("cert-upload-block")
+    const help = document.getElementById("ssl-help")
+    const urlInput = document.getElementById("url_input")
+
+    if (mode === "file") {
+      certBlock.classList.remove("hidden")
+      help.textContent = "SSL будет проверяться по загруженному PEM сертификату."
+      urlInput.required = false
+      urlInput.placeholder = "URL сервиса (необязательно для PEM)"
+    } else if (mode === "disabled") {
+      certBlock.classList.add("hidden")
+      help.textContent = "SSL проверка отключена."
+      urlInput.required = true
+      urlInput.placeholder = "https://service.local"
+    } else {
+      certBlock.classList.add("hidden")
+      help.textContent = "SSL будет проверяться по HTTPS из URL."
+      urlInput.required = true
+      urlInput.placeholder = "https://service.local"
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const sslMode = document.getElementById("ssl_mode")
+    if (sslMode) {
+      sslMode.addEventListener("change", updateSslMode)
+      updateSslMode()
+    }
+  })
+
+ function getSslState(days) {
+    if (days === null || days === "") return "none"
+
+    const num = parseInt(days, 10)
+
+    if (Number.isNaN(num)) return "none"
+    if (num === -1) return "error"
+    if (num < 0) return "expired"
+    if (num < 30) return "warning"
+    return "ok"
+  }
+
+  function filterServices() {
+    const searchEl = document.getElementById("serviceSearch")
+    const groupEl = document.getElementById("groupFilter")
+    const sslEl = document.getElementById("sslFilter")
+    const criticalEl = document.getElementById("criticalFilter")
+    const sslStateEl = document.getElementById("sslStateFilter")
+    const sortEl = document.getElementById("sortFilter")
+
+    if (!searchEl || !groupEl || !sslEl || !criticalEl || !sslStateEl || !sortEl) return
+
+    const search = searchEl.value.toLowerCase().trim()
+    const group = groupEl.value.toLowerCase()
+    const ssl = sslEl.value
+    const critical = criticalEl.value
+    const sslState = sslStateEl.value
+    const sortMode = sortEl.value
+
+    const container = document.querySelector(".grid.gap-4")
+    const items = Array.from(document.querySelectorAll(".service-item"))
+
+    items.forEach(item => {
+      const name = item.dataset.name || ""
+      const itemGroup = item.dataset.group || ""
+      const itemSsl = item.dataset.ssl || ""
+      const itemCritical = item.dataset.critical || ""
+      const itemSslDays = item.dataset.sslDays || ""
+      const itemSslState = getSslState(itemSslDays)
+
+      const matchSearch = !search || name.includes(search)
+      const matchGroup = !group || itemGroup === group
+      const matchSsl = !ssl || itemSsl === ssl
+      const matchCritical = !critical || itemCritical === critical
+      const matchSslState = !sslState || itemSslState === sslState
+
+      if (matchSearch && matchGroup && matchSsl && matchCritical && matchSslState) {
+        item.style.display = ""
+      } else {
+        item.style.display = "none"
+      }
+    })
+
+    const visibleItems = items.filter(item => item.style.display !== "none")
+
+    visibleItems.sort((a, b) => {
+      const nameA = a.dataset.name || ""
+      const nameB = b.dataset.name || ""
+
+      const sslA = parseInt(a.dataset.sslDays || "999999", 10)
+      const sslB = parseInt(b.dataset.sslDays || "999999", 10)
+
+      if (sortMode === "name_asc") return nameA.localeCompare(nameB, "ru")
+      if (sortMode === "name_desc") return nameB.localeCompare(nameA, "ru")
+      if (sortMode === "ssl_asc") return sslA - sslB
+      if (sortMode === "ssl_desc") return sslB - sslA
+
+      return 0
+    })
+
+    visibleItems.forEach(item => container.appendChild(item))
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    [
+      "serviceSearch",
+      "groupFilter",
+      "sslFilter",
+      "criticalFilter",
+      "sslStateFilter",
+      "sortFilter"
+    ].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.addEventListener("input", filterServices)
+        el.addEventListener("change", filterServices)
+      }
+    })
+  })
+
+
+</script>
+
+<script>
+  function resetFilters() {
+    const serviceSearch = document.getElementById("serviceSearch")
+    const groupFilter = document.getElementById("groupFilter")
+    const sslFilter = document.getElementById("sslFilter")
+    const criticalFilter = document.getElementById("criticalFilter")
+    const sslStateFilter = document.getElementById("sslStateFilter")
+    const sortFilter = document.getElementById("sortFilter")
+
+    if (serviceSearch) serviceSearch.value = ""
+    if (groupFilter) groupFilter.value = ""
+    if (sslFilter) sslFilter.value = ""
+    if (criticalFilter) criticalFilter.value = ""
+    if (sslStateFilter) sslStateFilter.value = ""
+    if (sortFilter) sortFilter.value = ""
+
+    const items = document.querySelectorAll(".service-item")
+    items.forEach(item => {
+      item.style.display = ""
+    })
+  }
+
+  function getSslState(days) {
+    if (days === null || days === "") return "none"
+
+    const num = parseInt(days, 10)
+
+    if (Number.isNaN(num)) return "none"
+    if (num === -1) return "error"
+    if (num < 0) return "expired"
+    if (num < 30) return "warning"
+    return "ok"
+  }
+
+  function filterServices() {
+    const searchEl = document.getElementById("serviceSearch")
+    const groupEl = document.getElementById("groupFilter")
+    const sslEl = document.getElementById("sslFilter")
+    const criticalEl = document.getElementById("criticalFilter")
+    const sslStateEl = document.getElementById("sslStateFilter")
+    const sortEl = document.getElementById("sortFilter")
+    const container = document.getElementById("services-list")
+
+    if (!searchEl || !groupEl || !sslEl || !criticalEl || !sslStateEl || !sortEl || !container) return
+
+    const search = searchEl.value.toLowerCase().trim()
+    const group = groupEl.value.toLowerCase()
+    const ssl = sslEl.value
+    const critical = criticalEl.value
+    const sslState = sslStateEl.value
+    const sortMode = sortEl.value
+
+    const items = Array.from(document.querySelectorAll(".service-item"))
+
+    items.forEach(item => {
+      const name = item.dataset.name || ""
+      const itemGroup = item.dataset.group || ""
+      const itemSsl = item.dataset.ssl || ""
+      const itemCritical = item.dataset.critical || ""
+      const itemSslDays = item.dataset.sslDays || ""
+      const itemSslState = getSslState(itemSslDays)
+
+      const matchSearch = !search || name.includes(search)
+      const matchGroup = !group || itemGroup === group
+      const matchSsl = !ssl || itemSsl === ssl
+      const matchCritical = !critical || itemCritical === critical
+      const matchSslState = !sslState || itemSslState === sslState
+
+      if (matchSearch && matchGroup && matchSsl && matchCritical && matchSslState) {
+        item.style.display = ""
+      } else {
+        item.style.display = "none"
+      }
+    })
+
+    const visibleItems = items.filter(item => item.style.display !== "none")
+
+    visibleItems.sort((a, b) => {
+      const nameA = a.dataset.name || ""
+      const nameB = b.dataset.name || ""
+
+      const sslA = parseInt(a.dataset.sslDays || "999999", 10)
+      const sslB = parseInt(b.dataset.sslDays || "999999", 10)
+
+      if (sortMode === "name_asc") return nameA.localeCompare(nameB, "ru")
+      if (sortMode === "name_desc") return nameB.localeCompare(nameA, "ru")
+      if (sortMode === "ssl_asc") return sslA - sslB
+      if (sortMode === "ssl_desc") return sslB - sslA
+
+      return 0
+    })
+
+    visibleItems.forEach(item => container.appendChild(item))
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const toggleBtn = document.getElementById("toggleFiltersBtn")
+    const panel = document.getElementById("filtersPanel")
+
+    if (toggleBtn && panel) {
+      panel.classList.add("hidden")
+      panel.style.display = "none"
+      toggleBtn.textContent = "🔎 Фильтры"
+
+      toggleBtn.addEventListener("click", () => {
+        const isHidden =
+          panel.classList.contains("hidden") || panel.style.display === "none"
+
+        if (isHidden) {
+          panel.classList.remove("hidden")
+          panel.style.display = "block"
+          toggleBtn.textContent = "🔎 Скрыть фильтры"
+        } else {
+          resetFilters()
+          panel.classList.add("hidden")
+          panel.style.display = "none"
+          toggleBtn.textContent = "🔎 Фильтры"
+        }
+      })
+    }
+
+    [
+      "serviceSearch",
+      "groupFilter",
+      "sslFilter",
+      "criticalFilter",
+      "sslStateFilter",
+      "sortFilter"
+    ].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.addEventListener("input", filterServices)
+        el.addEventListener("change", filterServices)
+      }
+    })
+  })
 </script>
 </body>
 </html>

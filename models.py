@@ -23,12 +23,17 @@ class Service(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     url = db.Column(db.String(255), nullable=False)
+    is_critical = db.Column(db.Boolean, default=False)
 
     status = db.Column(db.String(10), default="unknown")
     checked_at = db.Column(db.DateTime)
+    
 
     ssl_days_left = db.Column(db.Integer)
     ssl_expiry_date = db.Column(db.DateTime)
+    ssl_checked_at = db.Column(db.DateTime)
+    ssl_cert_path = db.Column(db.String(255))
+    ssl_mode = db.Column(db.String(10), default="auto")
     
     group_id = db.Column(
         db.Integer,

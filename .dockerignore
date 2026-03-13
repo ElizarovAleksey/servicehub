@@ -17,6 +17,9 @@ docs/
 
 # Env
 .env
+docker-compose.yml
+Dockerfile
 
 # OS
 .DS_Store
+README.md

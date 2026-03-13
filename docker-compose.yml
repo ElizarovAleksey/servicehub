@@ -5,13 +5,12 @@ services:
     ports:
       - "5055:5000"
     dns:
-      - 192.168.3.112
-      - 192.168.3.1
+      - 192.168.0.1
+      - 192.168.1.1
     volumes:
       - .:/app
       - ./data:/data
     environment:
       ADMIN_USER: ${ADMIN_USER}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      TZ: Europe/Helsinki
     restart: unless-stopped    
